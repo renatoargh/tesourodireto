@@ -2,8 +2,8 @@ const jcrawler = require('jcrawler')
 const cheerio = require('cheerio')
 const TESOURO_DIRETO_URL = 'https://tesourodireto.bmfbovespa.com.br/portalinvestidor/'
 
+const noop = () => {}
 const parseValor = (valor) => parseFloat(valor.replace(/\./g, '').replace(',', '.'))
-
 const parseConta = (texto) => {
   const match = texto.match(/^(.*)\s-\s(.*)\s\(Conta ativa desde\s(.*)\)$/)
 
@@ -18,7 +18,7 @@ const parseConta = (texto) => {
   }
 }
 
-const tesouroDireto = async (credenciais, cb) => {
+const tesouroDireto = async (credenciais, cb = noop) => {
   if (!Array.isArray(credenciais)) {
     credenciais = [credenciais]
   }
@@ -98,5 +98,3 @@ module.exports = tesouroDireto
 // tesouroDireto(credenciais).then(dados => {
 //   console.log(JSON.stringify(dados, null, 4))
 // })
-
-
