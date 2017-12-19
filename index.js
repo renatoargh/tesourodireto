@@ -1,3 +1,4 @@
+const Money = require('bigmoney.js')
 const Big = require('big.js')
 const Moment = require('moment')
 const jcrawler = require('jcrawler')
@@ -6,7 +7,14 @@ const TESOURO_DIRETO_URL = 'https://tesourodireto.bmfbovespa.com.br/portalinvest
 
 const noop = () => {}
 const parseData = data => new Moment(data, 'DD/MM/YYYY').toDate()
-const parseValor = valor => parseFloat(valor.replace(/\./g, '').replace(',', '.')) || null
+const parseValor = valor => {
+  valor = parseFloat(valor.replace(/\./g, '').replace(',', '.'))
+  if (isNaN(valor)) {
+    return null
+  }
+
+  return valor || 0
+}
 
 const parseConta = texto => {
   const match = texto.match(/^(.*)\s-\s(.*)\s\(Conta ativa desde\s(.*)\)$/)
@@ -33,8 +41,11 @@ function obterValoresCalculados (titulo) {
   }
 
   // DIAS ATE O VENCIMENTO
-  const hoje = new Moment()
-  const diasAteVencimento = new Moment(titulo.vencimento).diff(hoje, 'days')
+  let diasAteVencimento = undefined
+  if (titulo.vencimento) {
+    const hoje = new Moment()
+    diasAteVencimento = new Moment(titulo.vencimento).diff(hoje, 'days')
+  }
 
   // RESULTADO
   return { valorizacao, diasAteVencimento }
@@ -54,7 +65,7 @@ const tesouroDireto = async (credenciais, cb = noop) => {
     backoff: 2,
     log: false
   })
-  
+
   crawler
     .on('error', cb)
     .on('end', dados => cb(null, dados))
@@ -112,6 +123,23 @@ const tesouroDireto = async (credenciais, cb = noop) => {
         resultado.titulos.push(titulo)
       })
 
+      resultado.totais = resultado.titulos.reduce((acc, titulo) => {
+        acc.valorInvestido = acc.valorInvestido.plus(titulo.valorInvestido)
+        acc.valorBrutoAtual = acc.valorBrutoAtual.plus(titulo.valorBrutoAtual)
+        acc.valorLiquidoAtual = acc.valorLiquidoAtual.plus(titulo.valorLiquidoAtual)
+
+        return acc
+      }, {
+        valorInvestido: new Money(0),
+        valorBrutoAtual: new Money(0),
+        valorLiquidoAtual: new Money(0),
+      })
+
+      resultado.totais.valorInvestido = resultado.totais.valorInvestido.valueOf()
+      resultado.totais.valorBrutoAtual = resultado.totais.valorBrutoAtual.valueOf()
+      resultado.totais.valorLiquidoAtual = resultado.totais.valorLiquidoAtual.valueOf()
+      Object.assign(resultado.totais, obterValoresCalculados(resultado.totais))
+
       resultados.push(resultado)
     })
 
@@ -122,7 +150,6 @@ const tesouroDireto = async (credenciais, cb = noop) => {
 module.exports = tesouroDireto
 
 const credenciais = require('./credenciais.js')
-// tesouroDireto(credenciais, (err, dados) => {
 tesouroDireto(credenciais).then(dados => {
   console.log(JSON.stringify(dados, null, 4))
 }).catch(err => {
