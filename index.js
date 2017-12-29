@@ -79,8 +79,7 @@ const tesouroDireto = async (credenciais, cb = noop) => {
     await page.click('input#BodyContent_btnLogar')
 
     // EXTRATO
-    // await page.waitForNavigation({ waitUntil: 'load' })
-    await page.waitFor(30000)
+    await page.waitFor('#objGrafPosiInv', { timeout: 60000 })
     await page.goto(TESOURO_DIRETO_URL + '/extrato.aspx', { timeout: 60000 })
     await page.click('input#BodyContent_btnConsultar')
     await page.waitFor('.section-container', { timeout: 60000 })
@@ -148,11 +147,3 @@ const tesouroDireto = async (credenciais, cb = noop) => {
 }
 
 module.exports = tesouroDireto
-
-const credenciais = require('./credenciais.js')
-tesouroDireto(credenciais).then(dados => {
-  console.log(JSON.stringify(dados, null, 4))
-}).catch(err => {
-  console.log('err')
-  console.log(err)
-})
