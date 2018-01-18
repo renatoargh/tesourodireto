@@ -32,13 +32,16 @@ const parseConta = texto => {
 
 
 function obterValoresCalculados (titulo) {
-  // VALORIZACAO
+  // VALORIZACAO PERCENTUAL
   const { valorInvestido, valorLiquidoAtual } = titulo
-  let valorizacao = parseFloat(new Big(valorLiquidoAtual).div(valorInvestido).minus(1).round(6).valueOf())
-  valorizacao = new Big(valorizacao).times(100).round(2).valueOf().replace('.', ',') + '%'
-  if (!valorizacao.startsWith('-')) {
-    valorizacao = '+' + valorizacao
+  let valorizacaoPercentual = parseFloat(new Big(valorLiquidoAtual).div(valorInvestido).minus(1).round(6).valueOf())
+  valorizacaoPercentual = new Big(valorizacaoPercentual).times(100).round(2).valueOf().replace('.', ',') + '%'
+  if (!valorizacaoPercentual.startsWith('-')) {
+    valorizacaoPercentual = '+' + valorizacaoPercentual
   }
+
+  // VALORIZACAO
+  const valorizacao = parseFloat(new Big(valorLiquidoAtual).minus(valorInvestido).valueOf())
 
   // DIAS ATE O VENCIMENTO
   let diasAteVencimento = undefined
@@ -48,7 +51,7 @@ function obterValoresCalculados (titulo) {
   }
 
   // RESULTADO
-  return { valorizacao, diasAteVencimento }
+  return { valorizacaoPercentual, valorizacao, diasAteVencimento }
 }
 
 const tesouroDireto = async (credenciais, cb = noop) => {
@@ -147,3 +150,5 @@ const tesouroDireto = async (credenciais, cb = noop) => {
 }
 
 module.exports = tesouroDireto
+
+// tesouroDireto(require('./credenciais')).then(asd => console.log(JSON.stringify(asd, null, 4)))
